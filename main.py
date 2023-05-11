@@ -1,8 +1,8 @@
 import json
-import webbrowser
-from config import token
+import os
 import requests
 
+token: str
 
 def get_user_id(id):
     return requests.get(
@@ -19,6 +19,7 @@ def get_all_friends(friend):
 
 
 def main():
+    os.getenv("token")
     coincidence = []
     with open('friends.json', 'r') as file:
         friends = json.load(file).get('friends')
@@ -28,10 +29,10 @@ def main():
         else:
             coincidence = set(coincidence).intersection(get_all_friends(friend))
     coincidence = ['https://vk.com/id' + str(i) for i in coincidence]
+    for link in coincidence:
+        print(link)
     with open(f'coincidence', 'w') as file:
         file.write(coincidence.__str__())
-    for link in coincidence:
-        webbrowser.get(using='google-chrome').open_new_tab(link)
 
 
 if __name__ == '__main__':
