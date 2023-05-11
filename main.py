@@ -19,7 +19,8 @@ def get_all_friends(friend):
 
 
 def main():
-    os.getenv("token")
+    global token
+    token = os.getenv("token")
     coincidence = []
     with open('friends.json', 'r') as file:
         friends = json.load(file).get('friends')
