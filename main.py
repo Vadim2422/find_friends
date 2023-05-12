@@ -34,7 +34,6 @@ async def main():
     for friend in friends:
         if coincidence is None:
             coincidence = await get_all_friends(friend)
-            # coincidence.extend(get_all_friends(friend))
         else:
             if not coincidence:
                 break
