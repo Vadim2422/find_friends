@@ -1,40 +1,50 @@
+import asyncio
 import json
 import os
-import requests
+from aiohttp import ClientSession
 
 token: str
 
-def get_user_id(id):
-    return requests.get(
-        f'https://api.vk.com/method/utils.resolveScreenName?screen_name={id}&access_token={token}&v=5.131').json()[
-        'response']['object_id']
+
+async def send_request(method: str, **params):
+    params['access_token'] = token
+    params['v'] = 5.131
+    request = f'https://api.vk.com/method/{method}'
+    async with ClientSession() as session:
+        async with session.get(request, params=params) as response:
+            return await response.json()
 
 
-def get_all_friends(friend):
-    id = get_user_id(friend)
-    all_ids = requests.get(
-        f'https://api.vk.com/method/friends.get?user_id={id}&access_token={token}&v=5.131').json().get(
-        'response').get('items')
-    return all_ids
+async def get_user_id(user_id):
+
+    return (await send_request("utils.resolveScreenName", screen_name=user_id))['response']['object_id']
 
 
-def main():
+async def get_all_friends(friend):
+    id = await get_user_id(friend)
+    return (await send_request('friends.get', user_id=id)).get('response').get('items')
+
+
+async def main():
     global token
     token = os.getenv("token")
-    coincidence = []
+    coincidence = None
     with open('friends.json', 'r') as file:
         friends = json.load(file).get('friends')
-    for index, friend in enumerate(friends):
-        if index == 0:
-            coincidence.extend(get_all_friends(friend))
+    for friend in friends:
+        if coincidence is None:
+            coincidence = await get_all_friends(friend)
+            # coincidence.extend(get_all_friends(friend))
         else:
-            coincidence = set(coincidence).intersection(get_all_friends(friend))
+            if not coincidence:
+                break
+            coincidence = set(coincidence).intersection(await get_all_friends(friend))
     coincidence = ['https://vk.com/id' + str(i) for i in coincidence]
     for link in coincidence:
         print(link)
     with open(f'coincidence', 'w') as file:
-        file.write(coincidence.__str__())
+        json.dump(coincidence, file, indent=4)
 
 
 if __name__ == '__main__':
-    main()
+    asyncio.run(main())
